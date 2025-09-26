@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台股分析儀</title>
+    <style>
+        /* --- 基本頁面樣式 --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            color: #1c1e21;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: auto;
+            background: #fff;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #0d1b2a;
+        }
+
+        /* --- 表單容器與元件樣式 --- */
+        .form-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        label {
+            font-weight: 600;
+            margin-right: 15px;
+        }
+        input[type="text"] {
+            padding: 12px;
+            width: 300px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input[type="text"]:focus {
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+        input[type="submit"] {
+            padding: 12px 24px;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        /* 按鈕樣式 */
+        .submit-query { background-color: #007bff; }
+        .submit-query:hover { background-color: #0056b3; }
+        .submit-update { background-color: #28a745; }
+        .submit-update:hover { background-color: #218838; }
+        .submit-pick { background-color: #fd7e14; } 
+        .submit-pick:hover { background-color: #e85a00; }
+        /* 【新增】"我的選股" 按鈕樣式 */
+        .submit-my-picks { background-color: #17a2b8; } /* 青色 */
+        .submit-my-picks:hover { background-color: #117a8b; }
+
+        /* --- 訊息提示框樣式 --- */
+        .message {
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 0 auto 20px auto;
+            max-width: 90%;
+        }
+        .error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+
+        /* --- 圖表與表格容器樣式 --- */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 40px;
+        }
+        .chart-container {
+            margin-top: 20px;
+            text-align: center;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .chart-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .table-container {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+        .table-style {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+        .table-style th, .table-style td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .table-style th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .table-style tbody tr:hover {
+            background-color: #f1f3f5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>台股分析儀</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="form-container">
+            <form method="post" action="{{ url_for('update_data') }}">
+                <input type="submit" value="大戶股權每周更新" class="submit-update">
+            </form>
+
+            <form method="post" action="{{ url_for('concentration_pick') }}">
+                <input type="submit" value="1日籌碼集中度選股" class="submit-pick">
+            </form>
+
+            <form method="post" action="{{ url_for('my_stock_picks') }}">
+                <input type="submit" value="我的選股" class="submit-my-picks">
+            </form>
+
+            <form method="post" action="{{ url_for('index') }}" style="display: flex; align-items: center; flex-basis: 100%; justify-content: center;">
+                <label for="stock_id">輸入股票代碼或名稱：</label>
+                <input type="text" id="stock_id" name="stock_id" value="{{ stock_id_show or '' }}" required>
+                <input type="submit" value="生成分析圖" class="submit-query" style="margin-left: 10px;">
+            </form>
+        </div>
+
+        {% if error %}
+            <p class="message error">{{ error }}</p>
+        {% endif %}
+
+        {% if my_picks_table %}
+            <div class="table-container">
+                <h2>我的選股 結果 (from Goodinfo)</h2>
+                {{ my_picks_table | safe }}
+            </div>
+        {% endif %}
+
+        {% if concentration_table %}
+            <div class="table-container">
+                <h2>籌碼集中度選股結果</h2>
+                {{ concentration_table | safe }}
+            </div>
+        {% endif %}
+
+        <div class="chart-grid">
+            {% if tech_chart %}
+                <div class="chart-container">
+                    <h2>技術分析圖</h2>
+                    <img src="{{ tech_chart }}?t={{ range(1, 99999) | random }}" alt="技術分析圖">
+                </div>
+            {% endif %}
+
+            {% if revenue_chart %}
+                <div class="chart-container">
+                    <h2>月營收趨勢圖</h2>
+                    <img src="{{ revenue_chart }}?t={{ range(1, 99999) | random }}" alt="月營收趨勢圖">
+                </div>
+            {% endif %}
+
+            {% if shareholder_chart %}
+                <div class="chart-container">
+                    <h2>大戶股權變化圖</h2>
+                    <img src="{{ shareholder_chart }}?t={{ range(1, 99999) | random }}" alt="大戶股權變化圖">
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,16 @@
+# 環境變數檔案，絕對不能上傳！
+Finmind.env
+.env
+
+# Python 暫存檔
+__pycache__/
+*.pyc
+
+# 編輯器或系統暫存檔
+.idea/
+.vscode/
+.DS_Store
+
+# 本地生成的圖檔和資料 (雲端會自己生成)
+/static/*.png
+大戶股權.csv
